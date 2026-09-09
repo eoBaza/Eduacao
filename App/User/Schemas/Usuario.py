@@ -12,3 +12,8 @@ class UsuarioCreate(BaseModel):
 # Retorno da API para o banco
 class UsuarioResponse(BaseModel):
     pass
+
+# Login do Usario
+class UsuarioLogin(BaseModel):
+    gmail: EmailStr
+    senha_hash: str
