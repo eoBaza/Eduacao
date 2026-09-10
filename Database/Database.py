@@ -13,7 +13,7 @@ DATABASE_URL = (
     f"{os.getenv('password')}@"
     f"{os.getenv('host')}:"
     f"{os.getenv('port')}/"
-    f"{os.getenv('database')}"
+    f"{os.getenv('banco')}"
 )
 
 engine = create_engine(DATABASE_URL)
