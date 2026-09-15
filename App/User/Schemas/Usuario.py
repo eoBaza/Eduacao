@@ -13,16 +13,26 @@ class UsuarioCreate(BaseModel):
     gmail: EmailStr
     tipo_usuario: TipoUsuarioEnum
     cnpj_cpf: str
-    senha_hash: str
+    senha: str
+    id_endereco: int
 
 # Retorno da API para o banco
 class UsuarioResponse(BaseModel):
+    id: int
     nome: str
     gmail: EmailStr
     tipo_usuario: TipoUsuarioEnum
     cnpj_cpf: str
+    id_endereco: int
+    class Config:
+        from_attributes = True
 
-# Login do Usario
+# Schema de Requisicao do Login (Input do Post /Login)
 class UsuarioLogin(BaseModel):
     gmail: EmailStr
     senha: str
+
+# Resposta de Login quando User conseguir logar
+class LoginResponse(BaseModel):
+    message: str
+    Session_Code: str

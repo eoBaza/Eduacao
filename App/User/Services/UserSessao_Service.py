@@ -21,7 +21,7 @@ def gerar_session_code(nbytes: int = nbytes) -> str:
 def create_session_user(user_id: int, db: Session = Depends(get_db)):
     dt_now= datetime.now()
     dt_exp = dt_now + timedelta(days=time_expira)
-    sessao_code = gerar_session_code()
+    code_sessao = gerar_session_code()
 
     usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
     if not usuario:
@@ -29,11 +29,10 @@ def create_session_user(user_id: int, db: Session = Depends(get_db)):
     usuario_sessao = Usuario_Sessao(
         id_usuario=user_id,
         ativo=True,
-        data_expiracao=dt_exp,
-        codigo_sessao=sessao_code,
-        data_criacao=dt_now
+        dt_expira=dt_exp,
+        sessao_code=code_sessao,
+        dt_criada=dt_now
     )
-
     db.add(usuario_sessao)
     db.commit()
     db.refresh(usuario_sessao)

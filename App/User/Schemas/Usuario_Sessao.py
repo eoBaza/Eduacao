@@ -13,4 +13,4 @@ class UsuarioSessaoResponse(BaseModel):
     id_usuario: int
     ativo: bool
     sessao_code: bool
-    dt_expirado: datetime
+    dt_expira: datetime
