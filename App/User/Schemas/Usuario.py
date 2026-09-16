@@ -36,3 +36,12 @@ class UsuarioLogin(BaseModel):
 class LoginResponse(BaseModel):
     message: str
     Session_Code: str
+
+# Reset senha do usuario
+class ResetSenha(BaseModel):
+    gmail: EmailStr
+    senha: str
+    confirma_senha: str
+
+class ResetSenhaResponse(BaseModel):
+    message: str

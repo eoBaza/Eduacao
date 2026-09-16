@@ -10,3 +10,5 @@ def hash_password(password: str) -> str:
 def verifica_password(plain_password: str, hashed_password:str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+def reset_password(password:str, confirmed_password: str) -> bool:
+    return password == confirmed_password
