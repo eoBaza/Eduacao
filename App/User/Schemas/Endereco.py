@@ -7,4 +7,8 @@ class EnderecoCreate(BaseModel):
     complemento: str
     id_regiao: int
 
-#class EnderecoResponse(BaseModel)
+class EnderecoUpdate(BaseModel):
+    cep: str | None = None
+    endereco: str | None = None
+    complemento: str | None = None
+    numero: str | None = None

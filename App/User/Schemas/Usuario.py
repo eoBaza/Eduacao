@@ -45,3 +45,18 @@ class ResetSenha(BaseModel):
 
 class ResetSenhaResponse(BaseModel):
     message: str
+
+# Info dashbord Usuario
+class Vw_UsuarioInfoResponse(BaseModel):
+    id_usuario: int
+    nome: str
+    gmail: str
+    tipo_usuario: TipoUsuarioEnum
+    cnpj_cpf: str
+    cep: str
+    endereco: str
+    numero: str
+    complemento: str
+
+class MessageResponse(BaseModel):
+    message: str

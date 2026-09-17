@@ -10,7 +10,7 @@ security = HTTPBearer()
 
 def get_usuario_logado(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     token = credentials.credentials
-    sessao = db.query(Usuario_Sessao).filter(Usuario_Sessao.token == token, Usuario_Sessao.ativo == True).firts()
+    sessao = db.query(Usuario_Sessao).filter(Usuario_Sessao.sessao_code == token, Usuario_Sessao.ativo == True).first()
 
     if not sessao:
         raise HTTPException(
