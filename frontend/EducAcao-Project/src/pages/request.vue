@@ -40,7 +40,7 @@ async function load() {
   try {
     user.value = await api('/user/info/')
     if (isNew.value) {
-      if (user.value.tipo_usuario === 'J') items.value = await api('/list_itens')
+      if (user.value.tipo_usuario === 'Juridico') items.value = await api('/list_itens')
     } else request.value = await api(`/solicitacao/${props.id}/`)
   } catch (e) { error.value = e.message } finally { loading.value = false }
 }
@@ -75,7 +75,7 @@ onMounted(load)
       <h1>{{ isNew ? 'Abrir solicitação' : `Solicitação #${id}` }}</h1>
       <p v-if="loading" role="status">Carregando informações…</p>
       <template v-else-if="isNew && user">
-        <p v-if="user.tipo_usuario !== 'J'">A abertura de solicitações está disponível para contas de instituições. Você pode explorar as listas e participar como apoiador.</p>
+        <p v-if="user.tipo_usuario !== 'Juridico'">A abertura de solicitações está disponível para contas de instituições. Você pode explorar as listas e participar como apoiador.</p>
         <form v-else @submit.prevent="publish">
           <p class="login-description">Selecione os materiais e informe quantas unidades sua instituição precisa.</p>
           <fieldset :disabled="busy">
