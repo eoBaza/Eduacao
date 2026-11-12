@@ -5,7 +5,9 @@ from pydantic import EmailStr
 
 #Arquivos
 from User.Schemas.Usuario import *
+from User.Schemas.Tipo_Usuario import TipoUsuarioResponse
 from User.Models.Usuario import Usuario
+from App.User.Models.Tipo_Usuario import TipoUsuario
 from User.Models.Usuario_Sessao import Usuario_Sessao
 from User.Models.Vw_Usuario_Info import Vw_usuario_Info
 from User.Services.User_Service import hash_password, verifica_password, reset_password
@@ -21,6 +23,10 @@ router = APIRouter()
 
 @router.post("/user/signup/", response_model=UsuarioResponse)
 def create_user(dados: UsuarioCreate,cep: str, numero: str, complemento:str | None = None, db: Session = Depends(get_db)):
+    tipo_usuario = db.query(TipoUsuario).filter(TipoUsuario.id == dados.id_tipo_usuario).first()
+    if not tipo_usuario:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de usuário inválido.")
+
     senha_cript = hash_password(dados.senha)
 
     novo_endereco = create_endereco(cep, numero, complemento, db=db)
@@ -28,7 +34,7 @@ def create_user(dados: UsuarioCreate,cep: str, numero: str, complemento:str | No
     usuario = Usuario(
         nome=dados.nome, 
         gmail=dados.gmail,
-        tipo_usuario=dados.tipo_usuario,
+        id_tipo_usuario=dados.id_tipo_usuario,
         cnpj_cpf=dados.cnpj_cpf,
         senha_hash=senha_cript,
         id_endereco=novo_endereco.id
@@ -140,3 +146,8 @@ def update_usuario(dados: UsuarioUpdate, sessao: Usuario_Sessao = Depends(get_us
     return {
         "message": "Usuário atualizado com sucesso"
     }
+
+@router.get("/user/tipo_usuario/", response_model=list[TipoUsuarioResponse])
+def get_tipo_usuario(db: Session = Depends(get_db)):
+    tipo_usuarios = db.query(TipoUsuario).all()
+    return tipo_usuarios

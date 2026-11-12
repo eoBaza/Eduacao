@@ -7,7 +7,7 @@ from datetime import datetime
 #Arquivos
 from Database.Database import Base
 
-class Vw_SolicitacaoPendente(Base):
+class Vw_SolicitacaoFinalizada(Base):
     __tablename__ = "vw_solicitacaofinalizada"
     __table_args__ = {"schema": "educacao"}
 

@@ -9,12 +9,23 @@ const requests = ref([])
 const loading = ref(true)
 const error = ref('')
 const search = ref('')
+const statusFilter = ref('')
+const statusOptions = [
+  { value: '', label: 'Todas' },
+  { value: 'pendente', label: 'Pendentes' },
+  { value: 'finalizada', label: 'Finalizadas' },
+]
 const menu = ref(null)
 function closeMenu() { if (menu.value) menu.value.open = false }
 function closeOutside(event) { if (!menu.value?.contains(event.target)) closeMenu() }
 function closeOnEscape(event) { if (event.key === 'Escape' && menu.value?.open) { closeMenu(); menu.value.querySelector('summary').focus() } }
 function openRequest() { closeMenu(); window.location.hash = '/solicitacao/nova' }
-let controller
+let loadVersion = 0
+function selectStatus(value) {
+  if (statusFilter.value === value) return
+  statusFilter.value = value
+  loadRequests()
+}
 const isOpen = (request) => request.status === 'Criado Por Requerente'
 const children = (request) => request.quantidade_meninas + request.quantidade_meninos
 const visibleRequests = computed(() => requests.value.filter((request) => {
@@ -24,15 +35,17 @@ const visibleRequests = computed(() => requests.value.filter((request) => {
 }))
 const dateLabel = (date) => new Date(date).toLocaleDateString('pt-BR')
 async function loadRequests() {
+  const version = ++loadVersion
   loading.value = true
   error.value = ''
 
   try {
     const endpoint = props.mine
-      ? '/solicitacao/minha-solicitacao/'
+      ? `/solicitacao/minha-solicitacao/${statusFilter.value ? `${statusFilter.value}/` : ''}`
       : '/solicitacao/'
 
     const data = await api(endpoint)
+    if (version !== loadVersion) return
 
     if (!Array.isArray(data)) {
       throw new Error('A API não retornou uma lista de solicitações.')
@@ -43,13 +56,14 @@ async function loadRequests() {
     )
 
   } catch (e) {
+    if (version !== loadVersion) return
     console.error('Erro ao carregar solicitações:', e)
 
     error.value =
       'Não foi possível carregar as solicitações. Tente novamente.'
 
   } finally {
-    loading.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 onMounted(() => {
@@ -58,7 +72,7 @@ onMounted(() => {
   document.addEventListener('keydown', closeOnEscape)
 })
 onUnmounted(() => {
-  controller?.abort()
+  loadVersion++
   document.removeEventListener('click', closeOutside)
   document.removeEventListener('keydown', closeOnEscape)
 })
@@ -105,9 +119,12 @@ onUnmounted(() => {
             <label class="search-box"><span class="sr-only">Buscar solicitação, instituição ou material</span><input v-model="search" type="search" placeholder="Buscar solicitação ou material" /></label>
 
           </div>
+          <div v-if="mine" class="status-filters" role="group" aria-label="Filtrar por situação">
+            <button v-for="option in statusOptions" :key="option.value" type="button" :aria-pressed="statusFilter === option.value" @click="selectStatus(option.value)">{{ option.label }}</button>
+          </div>
           <div v-if="loading" class="list-state" role="status"><span class="spinner"></span><p>Buscando solicitações…</p></div>
           <div v-else-if="error" class="list-state" role="alert"><h3>Vamos tentar de novo?</h3><p>{{ error }}</p><button class="quiet-button" @click="loadRequests">Tentar novamente</button></div>
-          <div v-else-if="!visibleRequests.length" class="list-state" role="status"><span class="empty-symbol" aria-hidden="true">≡</span><h3>{{ search.trim() ? 'Nenhuma solicitação encontrada' : (mine ? 'Você ainda não criou solicitações' : 'Nenhuma solicitação aberta no momento') }}</h3><p>{{ search.trim() ? 'Tente buscar outro material ou solicitação.' : (mine ? 'Use Abrir solicitação para cadastrar sua primeira lista de materiais.' : 'Novos pedidos de outras instituições aparecerão aqui assim que forem cadastrados.') }}</p></div>
+          <div v-else-if="!visibleRequests.length" class="list-state" role="status"><span class="empty-symbol" aria-hidden="true">≡</span><h3>{{ search.trim() ? 'Nenhuma solicitação encontrada' : (mine && statusFilter ? `Nenhuma solicitação ${statusFilter}` : (mine ? 'Você ainda não criou solicitações' : 'Nenhuma solicitação aberta no momento')) }}</h3><p>{{ search.trim() ? 'Tente buscar outro material ou solicitação.' : (mine && statusFilter ? 'Selecione outro filtro para acompanhar suas solicitações.' : (mine ? 'Use Abrir solicitação para cadastrar sua primeira lista de materiais.' : 'Novos pedidos de outras instituições aparecerão aqui assim que forem cadastrados.')) }}</p></div>
           <div v-else class="request-list">
             <article v-for="request in visibleRequests" :key="request.id" class="request-card">
               <div class="request-meta"><span>Solicitação #{{ request.id }}</span><span class="status-badge" :class="{ open: isOpen(request) }">{{ isOpen(request) ? 'Aguardando apoio' : request.status }}</span></div>
@@ -127,6 +144,7 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.status-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}.status-filters button{min-height:44px;padding:10px 18px;border:1px solid var(--palette-dfe5d8);border-radius:9px;background:var(--theme-surface);color:var(--palette-42563a);font:inherit;font-size:13px;cursor:pointer}.status-filters button[aria-pressed="true"]{background:#2f513e;border-color:#2f513e;color:#fff}.status-filters button:focus-visible{outline:3px solid #719d4b;outline-offset:3px}
 .home-shell{min-height:100svh}.app-header{background:var(--palette-fff);border-bottom:1px solid var(--palette-e3e8dc);padding:20px max(24px,calc((100vw - 1120px)/2));display:flex;align-items:center;justify-content:space-between;gap:16px}.app-header .brand-name{font-size:25px;text-decoration:none}.app-header .brand-symbol{width:36px;height:36px;border-radius:11px}.current-page{color:var(--palette-35583e);text-decoration:none;border-bottom:2px solid var(--palette-718e51);padding:14px 0}.quiet-button{background:none;border:0;color:var(--palette-4c6545);font-size:13px;min-height:44px;padding:10px 4px}.quiet-button:disabled{opacity:.5;cursor:wait}.home-content{max-width:1168px;margin:auto;padding:36px 24px}.welcome-panel{background:var(--palette-eaf0df);border:1px solid var(--palette-e0e7d3);border-radius:20px;padding:36px 40px;display:flex;align-items:center;justify-content:space-between;gap:28px;overflow:hidden}.eyebrow{font-size:10px!important;font-weight:650;letter-spacing:1.7px;color:var(--palette-61754e);margin:0 0 16px!important}.welcome-panel h1{font-size:36px;line-height:1.25;font-weight:600;letter-spacing:-1.5px}.welcome-panel h1 span{color:var(--palette-728650)}.welcome-panel p{font-size:14px;line-height:1.8;max-width:490px;color:var(--palette-67745e)}.primary-link{display:inline-flex;gap:24px;align-items:center;background:#2f513e;color:#fff;text-decoration:none;padding:14px 19px;border-radius:9px;font-size:13px;margin-top:12px;min-height:48px}.school-art{position:relative;width:220px;height:200px;flex-shrink:0}.art-orbit{position:absolute;width:190px;height:190px;inset:0;border-radius:50%;border:1px solid #cbd6b9;background:#e1e9d3}.art-book{position:absolute;width:115px;height:145px;border-radius:7px 14px 14px 7px;background:#6a8250;border-left:10px solid #4b653b;transform:rotate(-14deg);left:27px;top:29px;box-shadow:5px 6px 0 #fafbf3,8px 9px 0 #bfcbaa}.art-book:after{content:'';position:absolute;width:56px;height:2px;background:#d4dfbd;top:40px;left:20px;box-shadow:0 10px 0 #d4dfbd}.art-pencil{position:absolute;width:18px;height:145px;background:#ceb976;transform:rotate(24deg);right:33px;top:54px;border-radius:4px 4px 9px 9px;border-bottom:14px solid #40533a}.art-star{position:absolute;right:5px;top:0;font-size:52px;color:#8fa569}.home-columns{margin-top:36px}.section-heading{display:flex;justify-content:space-between;gap:12px;align-items:center}.section-heading .eyebrow{font-size:9px!important;margin-bottom:8px!important}h2{font-family:Manrope,sans-serif;font-size:21px;letter-spacing:-.7px;margin:0}h3{font-size:15px;line-height:1.5;margin:12px 0}.request-filters{display:flex;gap:10px;margin:22px 0}.search-box{flex:1;min-width:0}.request-filters input,.request-filters select{width:100%;min-height:46px;padding:12px;border:1px solid var(--palette-dfe5d8);border-radius:8px;color:var(--palette-42563a);background:var(--palette-fff);font:inherit;font-size:14px}.request-filters select:focus-visible{outline:3px solid #719d4b;outline-offset:2px}.list-state{background:var(--palette-fff);border:1px dashed var(--palette-d9e0cf);border-radius:14px;padding:40px 24px;text-align:center}.list-state p{font-size:13px;color:var(--palette-73806a);line-height:1.8;max-width:350px;margin:12px auto}.list-state .spinner{display:inline-block;border-color:var(--palette-dae3cf);border-top-color:var(--palette-557144)}.empty-symbol{display:inline-grid;place-items:center;width:48px;height:48px;border-radius:13px;background:var(--palette-eff3e8);color:var(--palette-728a55);font-size:30px}.request-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}.request-card{background:var(--theme-surface);border:1px solid var(--palette-e2e7d9);border-radius:14px;padding:23px;overflow-wrap:anywhere}.request-meta{display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:11px;color:var(--palette-7c8575)}.status-badge{background:var(--palette-f1f2ed);border-radius:20px;padding:6px 10px;font-size:10px}.status-badge.open{background:var(--palette-edf3e1);color:var(--palette-567037)}.request-description,.request-date{font-size:12px;color:var(--palette-7c8575)}.request-date{font-size:10px;margin-bottom:0}.home-footer{text-align:center;font-size:11px;color:var(--palette-859077);padding:40px 0 5px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(max-width:850px){.home-columns{grid-template-columns:1fr}.school-art{transform:scale(.8);width:170px}.welcome-panel{padding:30px}.welcome-panel h1{font-size:30px}}
 @media(max-width:540px){.app-header{padding:15px 18px}.app-header .brand-name{font-size:22px;gap:8px}.home-content{padding:22px 16px}.welcome-panel{padding:27px 23px}.welcome-panel h1{font-size:28px}.school-art{display:none}h2{font-size:19px}.request-filters{flex-direction:column}.request-filters input,.request-filters select{font-size:16px}.request-card{padding:18px}.request-meta{align-items:start}.status-badge{max-width:160px}.home-columns{gap:24px}}

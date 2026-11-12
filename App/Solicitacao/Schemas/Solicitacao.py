@@ -37,20 +37,16 @@ class SolicitacaoUpdate(BaseModel):
 
 class Vw_SolicitacaoPendenteResponse(BaseModel):
     id: int
+    id_user_requerente: int
+    quantidade_meninas: int
+    quantidade_meninos: int
     usuario_requerente: str
-    lista_itens: str
+    lista_itens: list[dict]
     status: str
-    dt_criada: str
-    usuario_apoiador:str
-    local_entrega: str
-    cep: str
+    dt_criada: datetime
+    usuario_apoiador: str | None = None
+    local_entrega: str | None = None
+    cep: str | None = None
     
-class Vw_SolicitacaoFinalizadaResponse(BaseModel):
-    id: int
-    usuario_requerente: str
-    lista_itens: str
-    status: str
-    dt_criada: str
-    usuario_apoiador:str
-    local_entrega: str
-    cep: str
+class Vw_SolicitacaoFinalizadaResponse(Vw_SolicitacaoPendenteResponse):
+    pass

@@ -8,6 +8,7 @@ from Database.Database import get_db
 from Solicitacao.Schemas.Solicitacao import *
 from Solicitacao.Models.Solicitacao import Solicitacao
 from Solicitacao.Models.Vw_SolicitacaoPendente import Vw_SolicitacaoPendente
+from Solicitacao.Models.Vw_SolicitacaoFinalizado import Vw_SolicitacaoFinalizada
 from User.Models.Usuario import Usuario
 from User.Models.Usuario_Sessao import Usuario_Sessao
 from Auth.Auth_Service import get_usuario_logado
@@ -15,8 +16,8 @@ from Auth.Auth_Service import get_usuario_logado
 router  = APIRouter()
 
 @router.get("/solicitacao/", response_model=List[SolicitacaoReponse])
-def get_all_solicitacoes(db: Session = Depends(get_db)):
-    all_solicitacoes = db.query(Solicitacao).all()
+def get_all_solicitacoes(session: Usuario_Sessao=Depends(get_usuario_logado), db: Session = Depends(get_db)):
+    all_solicitacoes = (db.query(Solicitacao).filter(Solicitacao.id_user_requerente != session.id_usuario).all())
     
     if not all_solicitacoes:
         raise HTTPException(
@@ -57,12 +58,32 @@ def get_my_solicitacao(session: Usuario_Sessao = Depends(get_usuario_logado), db
 
     return get_my_solicitacao
 
-@router.get("/solicitacao/pendente/", response_model=list[Vw_SolicitacaoPendenteResponse])
+@router.get("/solicitacao/minha-solicitacao/pendente/", response_model=list[Vw_SolicitacaoPendenteResponse])
 def get_solicitacoes_pendent(session: Usuario_Sessao = Depends(get_usuario_logado),db: Session = Depends(get_db)):
-    user_name = db.query(Usuario).filter(Usuario.id == session.id).first()
-    solicitacao = (db.query(Vw_SolicitacaoPendente).filter(Vw_SolicitacaoPendente.usuario_requerente == user_name.nome).all())
+    return get_minhas_solicitacoes_view(db, Vw_SolicitacaoPendente, session.id_usuario)
 
-    return solicitacao
+@router.get("/solicitacao/minha-solicitacao/finalizada/", response_model=List[Vw_SolicitacaoFinalizadaResponse])
+def get_solicitacoes_finalizadas(session: Usuario_Sessao = Depends(get_usuario_logado), db: Session = Depends(get_db)):
+    return get_minhas_solicitacoes_view(db, Vw_SolicitacaoFinalizada, session.id_usuario)
+
+# FUNCAO PARA COMPLEMENTAR as rotas get (minha-solicitacao)
+def get_minhas_solicitacoes_view(db: Session, view, usuario_id: int):
+    registros = (
+        db.query(view, Solicitacao)
+        .join(Solicitacao, Solicitacao.id == view.id)
+        .filter(Solicitacao.id_user_requerente == usuario_id)
+        .order_by(Solicitacao.dt_criada.desc())
+        .all()
+    )
+    return [
+        {
+            **{column.name: getattr(dados, column.name) for column in view.__table__.columns},
+            "id_user_requerente": solicitacao.id_user_requerente,
+            "quantidade_meninas": solicitacao.quantidade_meninas,
+            "quantidade_meninos": solicitacao.quantidade_meninos,
+        }
+        for dados, solicitacao in registros
+    ]
 
 @router.get("/solicitacao/{solicitacao_id}/",response_model=SolicitacaoReponse)
 def get_solicitacao(solicitacao_id: int,db: Session = Depends(get_db)):
@@ -80,5 +101,5 @@ def get_solicitacao(solicitacao_id: int,db: Session = Depends(get_db)):
 
     return solicitacao
 
-
+#@router.patch("")
 

@@ -5,6 +5,7 @@ from datetime import datetime
 
 class VeiculoMotorista(Base):
     __tablename__ = "veiculo_motorista"
+    __table_args__ = {"schema": "educacao"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     id_usuario: Mapped[int] = mapped_column(Integer, nullable=False)
